@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "825581353335",
+    "project_id": "hicarapp-f2967",
+    "storage_bucket": "hicarapp-f2967.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825581353335:android:eb7775158f049d69708972",
+        "android_client_info": {
+          "package_name": "com.hicar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLY4X1kgrGNkS2uJcvopAE89OD-QIoiVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825581353335:android:c9a23df51fca8eee708972",
+        "android_client_info": {
+          "package_name": "com.hicaronshilgoo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLY4X1kgrGNkS2uJcvopAE89OD-QIoiVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825581353335:android:c46d6c2c06f39001708972",
+        "android_client_info": {
+          "package_name": "mn.zevtabs.hicar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLY4X1kgrGNkS2uJcvopAE89OD-QIoiVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825581353335:android:b0267e9d713408f7708972",
+        "android_client_info": {
+          "package_name": "mn.zevtabs.hicar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLY4X1kgrGNkS2uJcvopAE89OD-QIoiVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "825581353335-7m3inc2ebb7ii2q09m2nj03utk14c698.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

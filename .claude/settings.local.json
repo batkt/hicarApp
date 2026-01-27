@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(adb uninstall:*)",
+      "Bash(adb devices:*)",
+      "Bash(adb:*)",
+      "Bash(findstr:*)",
+      "Bash(gradlew bundleRelease:*)",
+      "Bash(.gradlew.bat bundleRelease)",
+      "Bash(cmd /c \"cd android && gradlew.bat bundleRelease\")",
+      "Bash(d:zolbayarhicarhicarworkandroidgradlew.bat bundleRelease)",
+      "Bash(./gradlew.bat bundleRelease:*)",
+      "Bash(./gradlew.bat clean)",
+      "Bash(./gradlew.bat clean bundleRelease:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

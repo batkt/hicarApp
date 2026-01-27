@@ -1,0 +1,9 @@
+{
+  "name": "hicarwork",
+  "displayName": "hicarwork",
+  "extra": {
+    "eas": {
+      "projectId": "b44cd0bb-4134-4c9b-9112-4dce89661664"
+    }
+  }
+}
