@@ -248,17 +248,29 @@ const IrtsDelgerengui = props => {
       <FlatList
         px={4}
         my={4}
-        data={irts.jagsaalt}
+        data={irts.jagsaalt || []}
         onEndReached={irts.next}
-        keyExtractor={m => m._id}
+        keyExtractor={m => m._id || m.ognoo + m.irsenTsag}
+        ListEmptyComponent={
+          !irts.isValidating && (!irts.jagsaalt || irts.jagsaalt.length === 0) ? (
+            <Center py={10}>
+              <Text color="gray.500">Ирцийн мэдээлэл олдсонгүй</Text>
+            </Center>
+          ) : null
+        }
         renderItem={({item}) => {
+          const zuragNer = item?.ajiltan?.zurgiinNer || ajiltan?.zurgiinNer;
           return (
             <Pressable flexDir={'row'} p={4} bg="white" rounded={'md'} mb={5}>
               <Avatar
                 size={'lg'}
-                source={{
-                  uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
-                }}
+                source={
+                  zuragNer && ajiltan?.baiguullagiinId
+                    ? {
+                        uri: `${url}/ajiltniiZuragAvya/${ajiltan.baiguullagiinId}/${zuragNer}`,
+                      }
+                    : undefined
+                }
               />
               <Box flex={1} ml="5">
                 <HStack space={4}>

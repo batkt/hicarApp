@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState, useCallback} from 'react';
 import {
   Box,
   HStack,
@@ -15,7 +15,8 @@ import {
   useDisclose,
   Skeleton,
   VStack,
-  Toast,
+  Actionsheet,
+  useToast,
 } from 'native-base';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useAuth} from 'components/context/Auth';
@@ -28,19 +29,23 @@ import {PermissionsAndroid, Platform} from 'react-native';
 import moment from 'moment';
 import useData from 'hooks/useData';
 import {RefreshControl} from 'react-native';
+import * as ImagePicker from 'react-native-image-picker';
 
 const infoMethod = 'post';
 const infoService = '/irtsiinMedeeAvya';
-// NetInfo.configure({shouldFetchWiFiSSID: true});
+
 const index = props => {
   const {token, sonorduulga, ajiltan, baiguullaga, unuudriinIrts, salbariinId} =
     useAuth();
   const navigation = useNavigation();
+  const Toast = useToast();
   const {isOpen, onOpen, onClose} = useDisclose();
   const [netDetails, setNetDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [countdown, setCountdown] = useState(5);
+  const [avatarUri, setAvatarUri] = useState(null);
+  const [showImageSheet, setShowImageSheet] = useState(false);
   // const [turul, setTurul] = useState();
   const queryData = useMemo(() => {
     return {
@@ -49,7 +54,6 @@ const index = props => {
       ajiltniiId: ajiltan?._id,
     };
   }, [ajiltan]);
-  const currTime = moment().format('YYYY/MM/DD hh:mm');
 
   const info = useData(token, infoService, queryData, infoMethod);
 
@@ -67,20 +71,41 @@ const index = props => {
     };
   }, [info]);
 
-  const irtsUgukhEsekh = useMemo(() => {
-    return !unuudriinIrts?.data?.yawsanTsag || !unuudriinIrts?.data?.irsenTsag;
+  // Button state: orokh (any time) | dahinBurtguulye (12pm) | garakh (17pm) | null (done)
+  const buttonState = useMemo(() => {
+    const hasYawsanTsag = !!unuudriinIrts?.data?.yawsanTsag;
+    const hasIrsenTsag = !!unuudriinIrts?.data?.irsenTsag;
+    const now = moment().format('HH:mm');
+
+    if (hasYawsanTsag) return null; // All done
+    if (!hasIrsenTsag) return 'orokh'; // First check-in - anytime
+    if (now >= '17:00') return 'garakh'; // Гарах at 5pm
+    if (now >= '12:00') return 'dahinBurtguulye'; // Дахин бүртгүүлэх at 12pm
+    return 'waiting'; // Before 12pm after first check-in - show dahin disabled
   }, [unuudriinIrts]);
 
-  const ilgeekh = location => {
-    console.log('12312313 ', netDetails, location);
-    const urn = unuudriinIrts?.data?.irsenTsag
-      ? '/garsanTsagBurtguulye'
-      : '/irtsBurtguulye';
+  const irtsUgukhEsekh = useMemo(() => {
+    return buttonState !== null;
+  }, [buttonState]);
 
-    if (
-      !!netDetails?.details ||
-      netDetails?.details.bssid === '94:00:b0:3b:0b:5c'
-    ) {
+  // 1. Zowhon ajliin wifi darah - only allow check-in when on work WiFi
+  const isOnWorkWifi = useMemo(() => {
+    if (netDetails?.type !== 'wifi') return false;
+    const bssid = netDetails?.details?.bssid;
+    if (!bssid) return false;
+    const salbar = baiguullaga?.salbaruud?.find(a => a._id === salbariinId);
+    const allowedBssids = salbar?.wifiBssids || [];
+    if (allowedBssids.length > 0) {
+      return allowedBssids.includes(bssid);
+    }
+    return !!bssid;
+  }, [netDetails, salbariinId, baiguullaga]);
+
+  const ilgeekh = (location, action) => {
+    const urn =
+      action === 'garakh' ? '/garsanTsagBurtguulye' : '/irtsBurtguulye';
+
+    if (isOnWorkWifi) {
       uilchilgee(token)
         .post(urn, {
           salbariinId: salbariinId,
@@ -102,14 +127,14 @@ const index = props => {
         .catch(e => aldaaBarigch(e, Toast));
     } else {
       alert(
-        'Ажлын интернет сүлжээний хаяг буруу байна.' +
-          netDetails?.details.bssid,
+        'Зөвхөн ажлын WiFi сүлжээнд холбогдсон үед бүртгүүлэх боломжтой. Одоогийн сүлжээ: ' +
+          (netDetails?.type || 'Тодорхойгүй'),
       );
       NetInfo.fetch().then(networkState => {
         setNetDetails(networkState);
       });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -123,30 +148,32 @@ const index = props => {
 
   // Reset countdown when switching to "Гарах" mode
   useEffect(() => {
-    const isGarakh = unuudriinIrts?.data?.irsenTsag;
-    if (isGarakh) {
+    if (buttonState === 'garakh') {
       setCountdown(5);
       setIsButtonDisabled(true);
     } else {
       setIsButtonDisabled(false);
     }
-  }, [unuudriinIrts?.data?.irsenTsag]);
+  }, [buttonState]);
 
   useEffect(() => {
     // Countdown from 5 to 0 only for "Гарах" (exit)
-    const isGarakh = unuudriinIrts?.data?.irsenTsag;
-
-    if (isGarakh && countdown > 0) {
-      // Only countdown for "Гарах"
+    if (buttonState === 'garakh' && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (isGarakh && countdown === 0) {
+    } else if (buttonState === 'garakh' && countdown === 0) {
       setIsButtonDisabled(false);
     }
-  }, [countdown, unuudriinIrts?.data?.irsenTsag]);
+  }, [countdown, buttonState]);
+
   const tsagBurtgel = async () => {
+    if (buttonState === 'waiting') {
+      alert('Дахин бүртгүүлэх боломжтой цаг: 12:00-16:59');
+      return;
+    }
+
     try {
       const granted = await PermissionsAndroid?.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
@@ -156,7 +183,6 @@ const index = props => {
             'Ирц бүртгүүлэхэд таны байршлын мэдээлэл хэрэгтэй ' +
             'тул апп-н байршилд хандах эрхийг зөвшөөрнө үү.',
           buttonNeutral: 'Дараа асуу',
-          // buttonNegative: 'ЦУЦЛАХ',
           buttonPositive: 'ҮРГЭЛЖЛҮҮЛЭХ',
         },
       );
@@ -164,11 +190,10 @@ const index = props => {
         Platform.OS === 'ios' ||
         granted === PermissionsAndroid.RESULTS.GRANTED
       ) {
-        // Geolocation.requestAuthorization();
         setIsLoading(true);
         Geolocation.getCurrentPosition(
           position => {
-            ilgeekh(position.coords);
+            ilgeekh(position.coords, buttonState);
           },
           error => {
             setIsLoading(false);
@@ -191,6 +216,52 @@ const index = props => {
         x => !x.udruud.find(d => d === new Date().getDay().toString()),
       );
   }, [baiguullaga]);
+
+  // 5. User can change image by clicking image
+  const onImagePicked = useCallback(
+    response => {
+      if (response?.assets?.[0]?.uri) {
+        setAvatarUri(response.assets[0].uri);
+      }
+      setShowImageSheet(false);
+    },
+    [],
+  );
+
+  const onImageLibraryPress = useCallback(() => {
+    ImagePicker.launchImageLibrary(
+      {mediaType: 'photo', selectionLimit: 1, includeBase64: false},
+      onImagePicked,
+    );
+    setShowImageSheet(false);
+  }, [onImagePicked]);
+
+  const onCameraPress = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      const grants = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      ]);
+      if (
+        grants['android.permission.CAMERA'] !==
+        PermissionsAndroid.RESULTS.GRANTED
+      ) {
+        return;
+      }
+    }
+    ImagePicker.launchCamera(
+      {mediaType: 'photo', saveToPhotos: true, includeBase64: false},
+      onImagePicked,
+    );
+    setShowImageSheet(false);
+  }, [onImagePicked]);
+
+  const avatarSource = avatarUri
+    ? {uri: avatarUri}
+    : ajiltan?.zurgiinNer
+    ? {
+        uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
+      }
+    : require('../../assets/images/oyuk.jpg');
 
   return (
     <Box flex={1} style={{backgroundColor: '#f5f5fb'}}>
@@ -282,10 +353,13 @@ const index = props => {
               />
             }>
             <Center py={'5'} bg="white" rounded={'md'}>
-              <Avatar
-                size={'2xl'}
-                source={require('../../assets/images/oyuk.jpg')}
-              />
+              <Pressable onPress={() => setShowImageSheet(true)}>
+                <Avatar
+                  size={'2xl'}
+                  source={avatarSource}
+                  alt={ajiltan?.zurgiinNer}
+                />
+              </Pressable>
               <Box flexDir={'row'} alignItems="center">
                 <Heading>{ajiltan.ner}</Heading>
                 <Icon
@@ -434,27 +508,37 @@ const index = props => {
           </ScrollView>
           {irtsUgukhEsekh && (
             <Pressable
-              bg={unuudriinIrts?.data?.irsenTsag ? 'orange.100' : 'blue.100'}
+              bg={
+                buttonState === 'garakh'
+                  ? 'orange.100'
+                  : buttonState === 'dahinBurtguulye'
+                  ? 'blue.100'
+                  : 'blue.100'
+              }
               rounded={'md'}
               py={4}
-              disabled={isButtonDisabled}
-              opacity={isButtonDisabled ? 0.5 : 1}
+              disabled={isButtonDisabled || buttonState === 'waiting'}
+              opacity={
+                isButtonDisabled || buttonState === 'waiting' ? 0.5 : 1
+              }
               onPress={() => {
-                if (!isButtonDisabled) {
+                if (!isButtonDisabled && buttonState !== 'waiting') {
                   tsagBurtgel();
                 }
-                /*setTurul(unuudriinIrts?.data?.irsenTsag ? 'garakh' : 'irekh');
-                                    onOpen();*/
               }}>
               <Center>
                 <Heading
                   color={
-                    unuudriinIrts?.data?.irsenTsag ? 'orange.500' : 'blue.500'
+                    buttonState === 'garakh' ? 'orange.500' : 'blue.500'
                   }>
-                  {isButtonDisabled && unuudriinIrts?.data?.irsenTsag
+                  {isButtonDisabled && buttonState === 'garakh'
                     ? `${countdown} секунд`
-                    : unuudriinIrts?.data?.irsenTsag
+                    : buttonState === 'garakh'
                     ? 'Гарах'
+                    : buttonState === 'dahinBurtguulye'
+                    ? 'Дахин бүртгүүлэх'
+                    : buttonState === 'waiting'
+                    ? '12:00 цагт боломжтой'
                     : 'Орох'}
                 </Heading>
               </Center>
@@ -462,34 +546,41 @@ const index = props => {
           )}
         </>
       )}
-      {/*<Actionsheet isOpen={isOpen} onClose={onClose}>
+      <Actionsheet
+        isOpen={showImageSheet}
+        onClose={() => setShowImageSheet(false)}>
         <Actionsheet.Content>
-          <Center>
-            <Avatar
-              alt={ajiltan?.zurgiinNer}
-              size={'2xl'}
-              source={{
-                uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
-              }}
-            />
-            <Heading size={'md'}>Орох цаг</Heading>
-            <Box>{`${turul === 'irekh' ? currTime : 'Гарах'}`}</Box>
-          </Center>
-          <Pressable
-            w="full"
-            rounded={'full'}
-            m={5}
-            p={2}
-            bg="orange.100"        
-            onPress={turul === 'irekh' ? tsagBurtguulye : garakhTsagBurtguulye}>
-            <Center>
-              <Heading size={'md'} color="orange.500">
-                Бүртгүүлэх
-              </Heading>
-            </Center>
-          </Pressable>
+          <Box w="full" p={4}>
+            <Heading size="sm" mb={4}>
+              Зураг солих
+            </Heading>
+            <Pressable
+              py={3}
+              onPress={onImageLibraryPress}
+              borderBottomWidth={1}
+              borderColor="gray.200">
+              <HStack alignItems="center" space={3}>
+                <Icon
+                  as={<MaterialIcons name="photo-library" />}
+                  size="md"
+                  color="blue.500"
+                />
+                <Text>Зургийн сангаас сонгох</Text>
+              </HStack>
+            </Pressable>
+            <Pressable py={3} onPress={onCameraPress}>
+              <HStack alignItems="center" space={3}>
+                <Icon
+                  as={<MaterialIcons name="camera-alt" />}
+                  size="md"
+                  color="blue.500"
+                />
+                <Text>Камер ашиглах</Text>
+              </HStack>
+            </Pressable>
+          </Box>
         </Actionsheet.Content>
-      </Actionsheet>*/}
+      </Actionsheet>
     </Box>
   );
 };

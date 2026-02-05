@@ -1,0 +1,1 @@
+ /Users/macbookairm4/hicarApp/.dart_tool/flutter_build/5fead1ccd1129c3b6075d7960bc21835/native_assets.json: 
