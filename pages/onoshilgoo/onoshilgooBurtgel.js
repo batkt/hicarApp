@@ -15,13 +15,14 @@ import {
   Pressable,
   AlertDialog,
   KeyboardAvoidingView,
+  ScrollView
 } from 'native-base';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useAuth} from 'components/context/Auth';
 import {useLogic} from 'components/context/Logic';
 import {rightNavigation} from 'components/layout/LeftDrawer';
 import NetInfo from '@react-native-community/netinfo';
-import {Keyboard, StyleSheet, TouchableWithoutFeedback} from 'react-native';
+import {Keyboard, StyleSheet, TouchableWithoutFeedback, Platform} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import uilchilgee from '../../lib/uilchilgee';
 import useMashiniiSegment from 'hooks/useMashiniiSegment';
@@ -97,7 +98,7 @@ const onoshilgooBurtgel = props => {
     mashiniiDugaar: false,
   });
   const [seri, setSeri] = useState(['У', 'Б', 'А']);
-  const {mashiniiSegmentGaralt} = useMashiniiSegment(token);
+  const {jagsaalt: bukhUildveruud, mashiniiSegmentGaralt, mashiniiSegmentMutate, error} = useMashiniiSegment(token);
   const [uildver, setUildver] = useState([]);
   const navigation = useNavigation();
   const cxt = useLogic();
@@ -276,11 +277,15 @@ const onoshilgooBurtgel = props => {
         </HStack>
       </HStack>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <VStack
-          px={3}
-          pt={5}
-          style={{flex: 1, justifyContent: 'space-between'}}>
-          <Box>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{flex: 1}}>
+          <ScrollView
+            flex={1}
+            px={3}
+            pt={5}
+            keyboardShouldPersistTaps="handled">
+            <Box pb={20}>
             {(baiguullaga.tokhirgoo?.joloochiinUtasNuukh === undefined ||
               !baiguullaga.tokhirgoo?.joloochiinUtasNuukh) && (
               <FormControl isInvalid={errors.utasniiDugaar}>
@@ -390,23 +395,23 @@ const onoshilgooBurtgel = props => {
               </FormControl.ErrorMessage>
             </FormControl>
             <FormControl mt={5} isRequired isInvalid={errors.uildver}>
-              <FormControl.Label>Үйлдвэр</FormControl.Label>
+              <FormControl.Label>Үйлдвэр {bukhUildveruud?.length > 0 ? `(${bukhUildveruud.length})` : ''}</FormControl.Label>
               <Dropdown
                 style={styles.dropdown}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 inputSearchStyle={styles.inputSearchStyle}
-                data={mashiniiSegmentGaralt?.jagsaalt}
+                data={bukhUildveruud || []}
                 search
                 mt="1"
-                maxHeight={300}
-                keyboardAvoiding={true}
+                maxHeight={400}
                 labelField="ner"
                 valueField="ner"
                 dropdownPosition="top"
-                placeholder="Үйлдвэр сонгоно уу"
+                placeholder={error ? "Алдаа гарлаа (Дахин оролдох)" : !mashiniiSegmentGaralt ? "Ачаалж байна..." : "Үйлдвэр сонгоно уу"}
                 searchPlaceholder="Хайх..."
                 value={form.uildver ? form.uildver : ''}
+                onPress={() => error && mashiniiSegmentMutate()}
                 onChange={item => {
                   var dedTurul = [];
                   item.dedTurul.forEach(element => {
@@ -428,11 +433,11 @@ const onoshilgooBurtgel = props => {
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 inputSearchStyle={styles.inputSearchStyle}
-                data={uildver}
+                data={uildver || []}
                 search
                 mt="1"
                 disable={uildver.length === 0}
-                maxHeight={300}
+                maxHeight={400}
                 labelField="ner"
                 valueField="ner"
                 dropdownPosition="top"
@@ -452,34 +457,36 @@ const onoshilgooBurtgel = props => {
                 Загвар сонгоно уу!
               </FormControl.ErrorMessage>
             </FormControl>
-          </Box>
-          <AlertDialog isOpen={isAlert} onClose={() => setIsAlert(false)}>
-            <AlertDialog.Content>
-              <AlertDialog.Body>Гарахдаа итгэлтэй байна уу?</AlertDialog.Body>
-              <AlertDialog.Footer>
-                <Button.Group space={2}>
-                  <Button
-                    variant="unstyled"
-                    colorScheme="coolGray"
-                    onPress={() => setIsAlert(false)}>
-                    Үгүй
-                  </Button>
-                  <Button colorScheme="blue" onPress={() => butsah()}>
-                    Тийм
-                  </Button>
-                </Button.Group>
-              </AlertDialog.Footer>
-            </AlertDialog.Content>
-          </AlertDialog>
-        </VStack>
+            <AlertDialog isOpen={isAlert} onClose={() => setIsAlert(false)}>
+              <AlertDialog.Content>
+                <AlertDialog.Body>Гарахдаа итгэлтэй байна уу?</AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button.Group space={2}>
+                    <Button
+                      variant="unstyled"
+                      colorScheme="coolGray"
+                      onPress={() => setIsAlert(false)}>
+                      Үгүй
+                    </Button>
+                    <Button colorScheme="blue" onPress={() => butsah()}>
+                      Тийм
+                    </Button>
+                  </Button.Group>
+                </AlertDialog.Footer>
+              </AlertDialog.Content>
+            </AlertDialog>
+            </Box>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
-      <Button
-        m={3}
-        colorScheme={'blue'}
-        size="lg"
-        onPress={() => urgeljluuleh()}>
-        Үргэлжлүүлэх
-      </Button>
+      <Box p={3} bg="white">
+        <Button
+          colorScheme={'blue'}
+          size="lg"
+          onPress={() => urgeljluuleh()}>
+          Үргэлжлүүлэх
+        </Button>
+      </Box>
     </Box>
   );
 };

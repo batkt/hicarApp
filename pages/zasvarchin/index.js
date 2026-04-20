@@ -22,6 +22,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {rightNavigation} from 'components/layout/LeftDrawer';
 import {Platform, RefreshControl, Appearance} from 'react-native';
 import useKhabTuukh from 'hooks/useKhabTuukh';
+import { socket } from 'lib/uilchilgee';
 
 function Tuluv({ugugdul}) {
   var tuluv = '';
@@ -102,13 +103,24 @@ const index = props => {
   );
 
   useEffect(() => {
-    /*if (irtsBurtgekh) props.navigation.navigate('Ирц');
-    else */if (
+    if (
       asuultTuukhGaralt?.jagsaalt?.length === 0 &&
       baiguullaga?.tokhirgoo?.khabAshiglakhEsekh === true
     )
       props.navigation.navigate('asuulgaBuglukh');
   }, [asuultTuukhGaralt, baiguullaga, irtsBurtgekh]);
+
+  useEffect(() => {
+    if (baiguullaga?._id) {
+      socket().on(`baiguullaga${baiguullaga._id}`, () => {
+        zakhialgaMutate();
+        zakhialgaToollolt.toololtMutate();
+      });
+      return () => {
+        socket().off(`baiguullaga${baiguullaga._id}`);
+      };
+    }
+  }, [baiguullaga?._id]);
 
   const onChange = (event, selectedDate) => {
     ognoo[ognooniiIndex] = selectedDate || ognoo[ognooniiIndex];

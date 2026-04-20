@@ -8,6 +8,7 @@ import {
   Button,
   Avatar,
   useToast,
+  Badge,
   Modal,
   Input,
   VStack,
@@ -24,11 +25,10 @@ import Minute from 'components/custom/Minute';
 import {formatter, parser} from 'tools/function/inputFormatter';
 import AjiltanKhavaarilakh from 'components/page/zakhialga/AjiltanKhavaarilakh';
 import {useAjiltniiJagsaalt} from 'hooks/useAjiltan';
-import {log} from "react-native-reanimated";
+
 
 const zakhialgiinDelgerengui = props => {
   const {ajiltan, token, baiguullaga} = useAuth();
-  //#region khadalakh medeelel
   const [modalVisible, setModalVisible] = useState(false);
   const [temdeglel, setTemdeglel] = useState('Амжилттай');
   const [kmZaalt, setKmZaalt] = useState('0');
@@ -39,17 +39,8 @@ const zakhialgiinDelgerengui = props => {
     mile: false,
   });
 
-  // const [ajiltKhuvaakh, setAjiltKhuvaakh] = React.useState({show: false});
-  // const [songogdsonAjiltan, setSongogdsonAjiltan] = React.useState([]);
-  //#endregion
-  // console.log('231231', baiguullaga.tokhirgoo.kmZaaltZaavalBurtgekh);
-
   const initialRef = React.useRef(null);
   const finalRef = React.useRef(null);
-
-  const initialShareRef = React.useRef(null);
-  const finalShareRef = React.useRef(null);
-
   const toast = useToast();
 
   const {_id} = props.route.params;
@@ -59,20 +50,12 @@ const zakhialgiinDelgerengui = props => {
     _id,
   );
 
-  /*const query = React.useMemo(() => {
-    return {erkh: {$eq: 'Zasvarchin'}, _id: {$ne: ajiltan?._id}};
-  }, [ajiltan]);
-
-  const {ajilchdiinGaralt} = useAjiltniiJagsaalt(
-    ajiltKhuvaakh?.ajiltanSongokhEsekh && token,
-    ajiltan?.baiguullagiinId,
-    query,
-  );*/
-
   const zakhialga = useMemo(() => {
-    const bool = zakhialgiinGaralt?.jagsaalt[0].ajiltniiId === ajiltan._id;
-    return {body: zakhialgiinGaralt?.jagsaalt[0] || {},khariutsagchEsekh: bool};
-  }, [zakhialgiinGaralt]);
+    const list = zakhialgiinGaralt?.jagsaalt || [];
+    const item = list[0] || {};
+    const bool = item.ajiltniiId === ajiltan._id;
+    return {body: item, khariutsagchEsekh: bool};
+  }, [zakhialgiinGaralt, ajiltan._id]);
 
   const {
     zakhialgiinDugaar,
@@ -87,20 +70,18 @@ const zakhialgiinDelgerengui = props => {
   } = zakhialga.body;
 
   function zakhialgaEkhluulye(t, q) {
-      // console.log('-----qa--=-=-', q);
     let uri;
     let ilgeekhUtga;
-    if(t!=="zakhialga"){
-        uri = '/zakhialgaBaraaniiAjil';
-        ilgeekhUtga = q
+    if (t !== 'zakhialga') {
+      uri = '/zakhialgaBaraaniiAjil';
+      ilgeekhUtga = q;
     } else {
-        uri = '/zakhialgaEkhluulye';
-        ilgeekhUtga = zakhialga.body;
+      uri = '/zakhialgaEkhluulye';
+      ilgeekhUtga = zakhialga.body;
     }
     uilchilgee(token)
       .post(uri, ilgeekhUtga)
-      .then((res) => {
-        // console.log('-------=-=-', res);
+      .then(res => {
         if (res.data === 'Amjilttai') {
           toast.show({title: 'Амжилттай'});
           zakhialgaMutate();
@@ -110,373 +91,313 @@ const zakhialgiinDelgerengui = props => {
       .catch(e => aldaaBarigch(e, toast));
   }
 
-  /*function ajilKhuvaaya() {
-    setModalVisible(false);
-    onChangeShare('show', true);
-  }*/
-
-  function zakhialgaDuusgaya(duusgakhEsekh) {
-    if (!duusgakhEsekh) {
-      if (!!temdeglel) {
-        if(!!baiguullaga?.tokhirgoo?.kmZaaltZaavalBurtgekh && kmZaalt === '0' && mileZaalt === '0'){
-            setErrors({
-              km: true,
-              mile: true,
-            });
-          return null;
-        }
-        zakhialga.body.temdeglel = temdeglel;
-        zakhialga.body.kmZaalt = kmZaalt;
-        zakhialga.body.mileZaalt = mileZaalt;
-        /*zakhialga.body.khuvaaltssan = songogdsonAjiltan.map(a => ({
-          ajiltniiId: a?._id,
-          ajiltniiNer: a?.ner,
-        }));*/
-        uilchilgee(token)
-          .post('/zakhialgaDuusgaya', zakhialga.body)
-          .then(({data}) => {
-            if (data === 'Amjilttai') {
-              toast.show({title: 'Амжилттай'});
-              setTemdeglel('Амжилттай');
-              setKmZaalt('0');
-              setMileZaalt('0');
-              setModalVisible(false);
-              // setAjiltKhuvaakh({...{show: false}});
-              // setSongogdsonAjiltan([...[]]);
-              zakhialgaMutate();
-            }
-          });
-      } else toast.show({title: 'Тэмдэглэл болон км заалт оруулна уу'});
-    } /*else ajilKhuvaaya()*/
+  function zakhialgaDuusgaya() {
+    if (!!temdeglel) {
+      if (
+        !!baiguullaga?.tokhirgoo?.kmZaaltZaavalBurtgekh &&
+        kmZaalt === '0' &&
+        mileZaalt === '0'
+      ) {
+        setErrors({
+          km: true,
+          mile: true,
+        });
+        return null;
+      }
+      zakhialga.body.temdeglel = temdeglel;
+      zakhialga.body.kmZaalt = kmZaalt;
+      zakhialga.body.mileZaalt = mileZaalt;
+      uilchilgee(token)
+        .post('/zakhialgaDuusgaya', zakhialga.body)
+        .then(({data}) => {
+          if (data === 'Amjilttai') {
+            toast.show({title: 'Амжилттай'});
+            setTemdeglel('Амжилттай');
+            setKmZaalt('0');
+            setMileZaalt('0');
+            setModalVisible(false);
+            zakhialgaMutate();
+          }
+        })
+        .catch(e => aldaaBarigch(e, toast));
+    } else toast.show({title: 'Тэмдэглэл болон км заалт оруулна уу'});
   }
-  /*function onChangeShare(key, v) {
-    setAjiltKhuvaakh(a => {
-      a[key] = v;
-      return {...a};
-    });
-  }*/
+
   return (
-    <Box flex={1}>
+    <Box flex={1} bg="#f5f5fb">
       <HStack
         bg="#1877f2"
-        px={1}
-        py={3}
+        px={2}
+        py={4}
         justifyContent="space-between"
         alignItems="center"
-        borderBottomRadius="10px">
-        <HStack space={4} alignItems="center">
+        borderBottomRadius="20px"
+        shadow={4}>
+        <HStack space={2} alignItems="center">
           <IconButton
             icon={
               <Icon
-                size="sm"
+                size="md"
                 as={<MaterialIcons name="arrow-back" />}
                 color="white"
               />
             }
             onPress={() => props.navigation.goBack()}
           />
-          <Text color="white" fontSize={16} fontWeight="bold">
-            Захиалгын дэлгэрэнгүй
+          <Text color="white" fontSize={18} fontWeight="bold">
+            Захиалга #{zakhialgiinDugaar || ''}
           </Text>
         </HStack>
       </HStack>
-      <Box flex={1} margin={2} background="white" borderRadius="10">
-        {(tuluv === '2' || tuluv === '3') && (
-          <Box paddingTop={2}>
-            <Minute date={ekhelsenTsag} duusakhOgnoo={duussanTsag} />
-          </Box>
-        )}
-        {khuvaaltssan?.length > 0 && (
-          <Box px={4} pt={5}>
-            <Box flexDirection={'row'}>
-              {khuvaaltssan
-                .map(a => a.ajiltniiNer)
-                .map(a => (
-                  <Text p={1} bg={'blue.200'} rounded={'md'} mr={2} key={a}>
-                    {a}
-                  </Text>
-                ))}
+
+      <ScrollView contentContainerStyle={{paddingBottom: 80}}>
+        {/* Car and Status Section */}
+        <Box m={4} p={4} bg="white" borderRadius="20" shadow={2}>
+          <HStack justifyContent="space-between" alignItems="center" mb={4}>
+            <VStack>
+              <Text color="gray.500" fontSize="xs" bold uppercase>
+                Машины дугаар
+              </Text>
+              <Text fontSize="2xl" fontWeight="black" color="#1877f2">
+                {mashiniiDugaar}
+              </Text>
+            </VStack>
+            <Badge
+              colorScheme={
+                tuluv === '1'
+                  ? 'danger'
+                  : tuluv === '2'
+                  ? 'warning'
+                  : tuluv === '3'
+                  ? 'success'
+                  : 'gray'
+              }
+              rounded="full"
+              px={3}
+              py={1}
+              _text={{fontSize: 'xs', bold: true}}>
+              {tuluv === '1'
+                ? 'ЭХЛЭЭГҮЙ'
+                : tuluv === '2'
+                ? 'ХИЙГДЭЖ БАЙНА'
+                : tuluv === '3'
+                ? 'ДУУССАН'
+                : 'ЦУЦЛАГДСАН'}
+            </Badge>
+          </HStack>
+
+          {(tuluv === '2' || tuluv === '3') && (
+            <Box mb={4} p={3} bg="blue.50" borderRadius="lg">
+              <Minute date={ekhelsenTsag} duusakhOgnoo={duussanTsag} />
             </Box>
+          )}
+
+          <HStack divider={<Box borderLeftWidth={1} borderColor="gray.200" mx={2} />} justifyContent="space-between">
+            <VStack flex={1}>
+              <Text color="gray.400" fontSize="xs">Огноо</Text>
+              <Text fontSize={13} bold>{moment(ognoo).format('YYYY-MM-DD HH:mm')}</Text>
+            </VStack>
+            <VStack flex={1} alignItems="flex-end">
+              <Text color="gray.400" fontSize="xs">Утас</Text>
+              <Text fontSize={13} bold>
+                {((baiguullaga.tokhirgoo?.joloochiinUtasNuukh === undefined) || !baiguullaga.tokhirgoo?.joloochiinUtasNuukh) 
+                  ? khariltsagchiinUtas : 'Нууцалсан'}
+              </Text>
+            </VStack>
+          </HStack>
+        </Box>
+
+        {/* Responsible Persons */}
+        {khuvaaltssan?.length > 0 && (
+          <Box px={4} mb={2}>
+            <Text color="gray.500" fontSize="xs" bold mb={2} px={1}>АЖИЛТНУУД</Text>
+            <HStack space={2} flexWrap="wrap">
+              {khuvaaltssan.map((a, idx) => (
+                <Box key={idx} px={3} py={1} bg="blue.100" borderRadius="full">
+                  <Text fontSize={12} color="blue.700" bold>{a.ajiltniiNer}</Text>
+                </Box>
+              ))}
+            </HStack>
           </Box>
         )}
-        <Box
-          flexDirection="row"
-          justifyContent="space-between"
-          padding={4}
-          borderBottomWidth="1"
-          borderColor="#ccc">
-          <Box>
-            <Text>{moment(ognoo).format('YYYY-MM-DD HH:MM')}</Text>
-            <Text>{zakhialgiinDugaar}</Text>
-          </Box>
-          <Box>
-            <Text>{mashiniiDugaar}</Text>
-            {((baiguullaga.tokhirgoo?.joloochiinUtasNuukh === undefined) || !baiguullaga.tokhirgoo?.joloochiinUtasNuukh) &&
-            <Text>{khariltsagchiinUtas}</Text>}
-          </Box>
-        </Box>
-        <ScrollView>
-          {
-            zakhialguud?.map((z)=>(
-                <Box
-                    flexDirection="row"
-                    marginBottom={2}
-                    key={z._id}
-                    borderBottomWidth={1}
-                    borderBottomColor="#ccc">
-                  <VStack margin={2}>
-                    <HStack>
-                      <Box width="20%" justifyContent="center">
-                        <Avatar
-                            source={{
-                              uri: z.zurgiinNer
-                                  ? `${url}/zuragAvya/${z.zurgiinNer}`
-                                  : undefined,
-                            }}>
-                          {z.ner.substring(0, 2)}
-                          <Avatar.Badge bg={'red.200'} />
-                        </Avatar>
-                      </Box>
-                      <Box width="70%">
-                        <Text fontSize={14} bold>
-                          {z.ner}{' '}
-                        </Text>
-                        <Text>{z.turul} </Text>
-                        <Text fontSize={14} color="#1877f2">
-                          {z.khugatsaa} минут
-                        </Text>
-                      </Box>
-                      <Box justifyContent="center" width="10%">
-                        <Text fontSize="14" bold>
-                          {z.tooKhemjee} ш
-                        </Text>
+
+        {/* Services List */}
+        <Box px={4} mt={4}>
+          <Text color="gray.500" fontSize="xs" bold mb={2} px={1}>ҮЙЛЧИЛГЭЭНИЙ ЖАГСААЛТ</Text>
+          {zakhialguud?.map((z, idx) => (
+            <Box key={z._id || idx} mb={4} bg="white" borderRadius="20" shadow={1} overflow="hidden">
+              <HStack p={4} space={3} alignItems="center">
+                <Avatar
+                  size="md"
+                  bg="blue.100"
+                  source={{
+                    uri: z.zurgiinNer ? `${url}/zuragAvya/${z.zurgiinNer}` : undefined,
+                  }}>
+                  <Text color="blue.600" bold>{z.ner ? z.ner.substring(0, 2).toUpperCase() : '??'}</Text>
+                </Avatar>
+                <VStack flex={1}>
+                  <Text fontSize="md" bold color="gray.800">{z.ner}</Text>
+                  <HStack space={2}>
+                    <Text fontSize="xs" color="gray.500">{z.turul}</Text>
+                    <Text fontSize="xs" color="gray.500">•</Text>
+                    <Text fontSize="xs" color="blue.500" bold>{z.khugatsaa} мин</Text>
+                  </HStack>
+                </VStack>
+                <Box bg="gray.100" px={2} py={1} borderRadius="md">
+                  <Text bold fontSize="xs">{z.tooKhemjee} ш</Text>
+                </Box>
+              </HStack>
+
+              {/* Sub-items/Parts if any */}
+              {z?.baraanuud?.map((baraa, bIdx) => {
+                const canInteract = ((zakhialga.khariutsagchEsekh && (baraa?.ajiltniiId === ajiltan._id || !baraa?.ajiltniiId)) || baraa?.ajiltniiId === ajiltan._id);
+                if (!canInteract) return null;
+
+                return (
+                  <Box key={baraa._id || bIdx} bg="blue.50" m={2} mt={0} p={3} borderRadius="xl" borderLeftWidth={4} borderLeftColor="blue.400">
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <VStack flex={1}>
+                        <Text fontSize="sm" bold noOfLines={1}>{baraa.ner}</Text>
+                        <Text fontSize="10" color="gray.500">Цалин: {formatter(baraa.tsalin)}₮</Text>
+                      </VStack>
+                      <Box flex={1} alignItems="flex-end">
+                        {baraa.ajiltniiId === ajiltan._id && ajiltan._id !== zakhialga.body.ajiltniiId && (
+                          baraa?.tuluv === undefined ? (
+                            <Button
+                              size="sm"
+                              isLoading={bIdx === isLoading}
+                              colorScheme="facebook"
+                              onPress={() => {
+                                setIsLoading(bIdx);
+                                zakhialgaEkhluulye('baraa', {baraaniiId: baraa._id, tuluv: 2, zakhialgiinId: zakhialga.body._id});
+                              }}>
+                              Эхлүүлэх
+                            </Button>
+                          ) : baraa.tuluv === 2 ? (
+                            <Button
+                              size="sm"
+                              isLoading={bIdx === isLoading}
+                              colorScheme="warning"
+                              onPress={() => {
+                                setIsLoading(bIdx);
+                                zakhialgaEkhluulye('baraa', {baraaniiId: baraa._id, tuluv: 3, zakhialgiinId: zakhialga.body._id});
+                              }}>
+                              Дуусгах
+                            </Button>
+                          ) : baraa.tuluv === 3 ? (
+                            <HStack alignItems="center" space={1}>
+                              <Icon as={<MaterialIcons name="check-circle" />} color="success.500" size="xs" />
+                              <Text color="success.600" bold fontSize="xs">Дууссан</Text>
+                            </HStack>
+                          ) : null
+                        )}
                       </Box>
                     </HStack>
-                    {
-                      z?.baraanuud.map((baraa, index)=>(
-                         ((zakhialga.khariutsagchEsekh && (baraa?.ajiltniiId === ajiltan._id || !baraa?.ajiltniiId)) || baraa?.ajiltniiId === ajiltan._id)  &&
-                          <HStack
-                              bg={'blue.100'}
-                              p={3}
-                              key={baraa._id}
-                              mt={3}>
-                            <Box width="50%">{/*{console.log('-------======', baraa.tuluv)}*/}
-                              <HStack width="80%">
-                                <Text>Бараа: </Text>
-                                <Text numberOfLines={1} fontSize="14" bold>
-                                  {baraa.ner}
-                                </Text>
-                              </HStack>
-                              <HStack>
-                                <Text>Цалин: </Text>
-                                <Text fontSize="14" bold>
-                                  {formatter(baraa.tsalin)}
-                                </Text>
-                              </HStack>
-                            </Box>
-                            <Center width="50%">
-                              {baraa.ajiltniiId===ajiltan._id&&ajiltan._id!==zakhialga.body.ajiltniiId &&
-                              (
-                                  baraa?.tuluv === undefined ?
-                                      <Button
-                                          isLoading={ index === isLoading}
-                                          width="100%"
-                                          colorScheme="secondary"
-                                          onPress={()=>{setIsLoading(index);zakhialgaEkhluulye("baraa", {baraaniiId: baraa._id, tuluv: 2, zakhialgiinId: zakhialga.body._id})}}>
-                                          Эхлүүлэх
-                                      </Button>
-                                      :
-                                      baraa.tuluv === 2 ?
-                                          <Button
-                                              isLoading={index === isLoading}
-                                              bg="#1877f2"
-                                              width="100%"
-                                              _text={{color: 'white'}}
-                                              onPress={()=>{setIsLoading(index);zakhialgaEkhluulye("baraa", {baraaniiId: baraa._id, tuluv: 3, zakhialgiinId: zakhialga.body._id})}}>
-                                              Дуусгах
-                                          </Button>
-                                          : baraa.tuluv === 3 ?
-                                          <Button
-                                              isDisabled
-                                              width="100%"
-                                              colorScheme="green">
-                                              Дууссан
-                                          </Button> : <></>
-                              )}
-                            </Center>
-                          </HStack>
-                      ))
-                    }
-                  </VStack>
-                  <VStack >
-                  </VStack>
-                </Box>
-            ))
-          }
-        </ScrollView>
-      </Box>
-      <Modal
-        isOpen={modalVisible}
-        onClose={setModalVisible}
-        initialFocusRef={initialRef}
-        finalFocusRef={finalRef}>
-        <Modal.Content>
-          <Modal.CloseButton />
-          <Modal.Header>Захиалга дуусгах уу?</Modal.Header>
-          <Modal.Body>
-            Та захиалга дуусгахдаа тэмдэглэл болон км эсвэл миль заалтаа оруулна
-            уу!
-            <Input
-              mt={4}
-              ref={initialRef}
-              defaultValue={temdeglel}
-              onChangeText={setTemdeglel}
-              placeholder="Тэмдэглэл"
-            />
-            <Box flexDirection="column" mt={4}>
-              <FormControl isInvalid={errors.km}>
-                <Box  justifyContent="space-between" flexDirection="row" alignItems="center">
-                  <FormControl.Label
-                      _text={{
-                        bold: true,
-                      }}>
-                    Км:
-                  </FormControl.Label>
-                  <Input
-                      keyboardType="number-pad"
-                      width="70%"
-                      type="number"
-                      value={kmZaalt && formatter(kmZaalt)}
-                      onChangeText={v => setKmZaalt(parser(v))}
-                      placeholder="км заалт"
-                  />
-                </Box>
-                <FormControl.ErrorMessage
-                    leftIcon={<MaterialIcons color="red" name="error-outline" />}>
-                  ODO метрийн заалт оруулна уу.
-                </FormControl.ErrorMessage>
-              </FormControl>
-              <FormControl mt={4} isInvalid={errors.mile}>
-                <Box  justifyContent="space-between" flexDirection="row" alignItems="center">
-                  <FormControl.Label
-                      _text={{
-                        bold: true,
-                      }}>
-                    Миль:
-                  </FormControl.Label>
-                  <Input
-                      keyboardType="number-pad"
-                      width="70%"
-                      type="number"
-                      value={mileZaalt && formatter(mileZaalt)}
-                      onChangeText={v => setMileZaalt(parser(v))}
-                      placeholder="миль заалт"
-                  />
-                </Box>
-                <FormControl.ErrorMessage
-                    leftIcon={<MaterialIcons color="red" name="error-outline" />}>
-                  ODO метрийн заалт оруулна уу.
-                </FormControl.ErrorMessage>
-              </FormControl>
+                  </Box>
+                );
+              })}
             </Box>
+          ))}
+        </Box>
+      </ScrollView>
+
+      {/* Action Footer */}
+      {zakhialga.khariutsagchEsekh && (
+        <Box position="absolute" bottom={0} left={0} right={0} p={4} bg="white" shadow={9} borderTopRadius="20">
+          {tuluv === '2' && (
+            <Button
+              size="lg"
+              bg="#1877f2"
+              rounded="xl"
+              _text={{fontWeight: 'bold'}}
+              onPress={() => setModalVisible(true)}>
+              ЗАХИАЛГА ДУУСГАХ
+            </Button>
+          )}
+          {tuluv === '1' && (
+            <Button
+              size="lg"
+              colorScheme="secondary"
+              rounded="xl"
+              _text={{fontWeight: 'bold'}}
+              onPress={() => zakhialgaEkhluulye('zakhialga')}>
+              ЗАХИАЛГА ЭХЛҮҮЛЭХ
+            </Button>
+          )}
+          {tuluv === '3' && (
+             <Button
+             isDisabled
+             size="lg"
+             variant="outline"
+             colorScheme="success"
+             rounded="xl">
+             АЖИЛ ДУУССАН
+           </Button>
+          )}
+        </Box>
+      )}
+
+      {/* Completion Modal */}
+      <Modal isOpen={modalVisible} onClose={() => setModalVisible(false)} initialFocusRef={initialRef} finalFocusRef={finalRef} size="lg">
+        <Modal.Content borderRadius="20">
+          <Modal.CloseButton />
+          <Modal.Header _text={{bold: true}}>Ажил дуусгах баталгаажуулалт</Modal.Header>
+          <Modal.Body>
+            <VStack space={4}>
+              <Text color="gray.500">Тэмдэглэл болон одоогийн км/миль заалтыг оруулна уу.</Text>
+              
+              <FormControl>
+                <FormControl.Label>Тэмдэглэл</FormControl.Label>
+                <Input
+                  ref={initialRef}
+                  defaultValue={temdeglel}
+                  onChangeText={setTemdeglel}
+                  placeholder="Жишээ: Амжилттай дууслаа"
+                  variant="filled"
+                  bg="gray.100"
+                />
+              </FormControl>
+
+              <HStack space={2}>
+                <FormControl flex={1} isInvalid={errors.km}>
+                  <FormControl.Label>Км заалт</FormControl.Label>
+                  <Input
+                    keyboardType="number-pad"
+                    value={kmZaalt && formatter(kmZaalt)}
+                    onChangeText={v => {
+                      setKmZaalt(parser(v));
+                      setErrors(e => ({...e, km: false}));
+                    }}
+                    variant="filled"
+                    bg="gray.100"
+                  />
+                  <FormControl.ErrorMessage>Заалт оруулна уу.</FormControl.ErrorMessage>
+                </FormControl>
+
+                <FormControl flex={1} isInvalid={errors.mile}>
+                  <FormControl.Label>Миль заалт</FormControl.Label>
+                  <Input
+                    keyboardType="number-pad"
+                    value={mileZaalt && formatter(mileZaalt)}
+                    onChangeText={v => {
+                      setMileZaalt(parser(v));
+                      setErrors(e => ({...e, mile: false}));
+                    }}
+                    variant="filled"
+                    bg="gray.100"
+                  />
+                  <FormControl.ErrorMessage>Заалт оруулна уу.</FormControl.ErrorMessage>
+                </FormControl>
+              </HStack>
+            </VStack>
           </Modal.Body>
-          <Modal.Footer>
-            <Button.Group variant="ghost" space={2}>
-              <Button bg={'#1877f2'} colorScheme={'blue'} _text={{color: 'white'}}
-                onPress={() =>
-                  zakhialgaDuusgaya(
-                    /*baiguullaga?.tokhirgoo?.ajilKhuvaakhEsekh || */false,
-                  )
-                }>
-                Хадгалах
-              </Button>
-            </Button.Group>
+          <Modal.Footer bg="gray.50">
+            <Button w="full" bg="#1877f2" rounded="lg" onPress={zakhialgaDuusgaya}>
+              ХАДГАЛАХ
+            </Button>
           </Modal.Footer>
         </Modal.Content>
       </Modal>
-      {/*<Modal
-        isOpen={ajiltKhuvaakh?.show}
-        onClose={() => onChangeShare('show', false)}
-        initialFocusRef={initialShareRef}
-        finalFocusRef={finalShareRef}>
-        <Modal.Content>
-          <Modal.CloseButton />
-          <Modal.Header>Ажил бусадтай хуваах уу?</Modal.Header>
-          <Modal.Body>
-            <Box
-              flexDirection="row"
-              justifyContent={'space-between'}
-              alignItems="center"
-              px={2}>
-              <Text>Ажил бусадтай хуваах уу?</Text>
-              <Switch
-                size="lg"
-                offTrackColor="blue.100"
-                onTrackColor="blue.200"
-                onThumbColor="blue.500"
-                offThumbColor="blue.50"
-                isChecked={ajiltKhuvaakh?.ajiltanSongokhEsekh}
-                onChange={() =>
-                  onChangeShare(
-                    'ajiltanSongokhEsekh',
-                    !ajiltKhuvaakh?.ajiltanSongokhEsekh,
-                  )
-                }
-              />
-            </Box>
-          </Modal.Body>
-          <Modal.Body>
-            {ajiltKhuvaakh?.ajiltanSongokhEsekh && (
-              <AjiltanKhavaarilakh
-                token={token}
-                ajiltan={ajiltan}
-                value={songogdsonAjiltan}
-                ajilchdiinGaralt={ajilchdiinGaralt}
-                onChange={setSongogdsonAjiltan}
-              />
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <Button.Group variant="ghost" space={2}>
-              <Button onPress={() => zakhialgaDuusgaya(false)}>Хадгалах</Button>
-              <Button
-                onPress={() => onChangeShare('show', false)}
-                colorScheme="secondary">
-                Хаах
-              </Button>
-            </Button.Group>
-          </Modal.Footer>
-        </Modal.Content>
-      </Modal>*/}
-      {
-        zakhialga.khariutsagchEsekh &&
-        <HStack
-            alignItems="center"
-            justifyContent="center"
-            marginX={2}
-            marginBottom={2}>
-          {tuluv === '2' && (
-              <Button
-                  bg="#1877f2"
-                  width="100%"
-                  _text={{color: 'white'}}
-                  onPress={() => {
-                    setModalVisible(!modalVisible);
-                  }}>
-                Дуусгах
-              </Button>
-          )}
-          {tuluv === '1' && (
-              <Button
-                  width="100%"
-                  colorScheme="secondary"
-                  rounded="none"
-                  onPress={()=>{zakhialgaEkhluulye("zakhialga")}}>
-                Эхлүүлэх
-              </Button>
-          )}
-        </HStack>
-      }
     </Box>
   );
 };

@@ -15,7 +15,7 @@ import {
 import React, {useState} from 'react';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import otoFormData from 'tools/function/otoFormData';
-import uilchilgee from 'lib/uilchilgee';
+import uilchilgee, {aldaaBarigch} from 'lib/uilchilgee';
 import moment from 'moment';
 
 const nuutsUgSolikh = props => {
@@ -24,11 +24,9 @@ const nuutsUgSolikh = props => {
   const toast = useToast();
 
   function khadgalakh() {
-    const {utas, khayag} = khereglech;
-    ajiltan.utas = utas;
-    ajiltan.khayag = khayag;
-    ajiltan.zasakhEsekh = true;
-    const ajiltanFrom = otoFormData(ajiltan);
+    const dataToSend = {...ajiltan, ...khereglech};
+    dataToSend.zasakhEsekh = true;
+    const ajiltanFrom = otoFormData(dataToSend);
     uilchilgee(token)
       .post('/ajiltanBurtgekh', ajiltanFrom)
       .then(({data, status}) => {
@@ -36,7 +34,8 @@ const nuutsUgSolikh = props => {
           toast.show({title: 'Амжилттай заслаа', status: 'success'});
           props.navigation.goBack();
         }
-      });
+      })
+      .catch(e => aldaaBarigch(e, toast));
   }
 
   return (

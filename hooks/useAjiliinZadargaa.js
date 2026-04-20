@@ -11,7 +11,7 @@ const fetcher = (url, token, baiguullagiinId, zakhialgaId) => {
 }
 
 function useZakhialga(token, baiguullagiinId, zakhialgaId) {
-    const { data, mutate } = useSWR(!!token && !!baiguullagiinId ? ['/zakhialgiinJagsaaltAvya', token, baiguullagiinId, zakhialgaId] : null, fetcher, { revalidateOnFocus: false })
+    const { data, mutate } = useSWR(!!token && !!baiguullagiinId ? ['/zakhialgiinJagsaaltAvya', token, baiguullagiinId, zakhialgaId] : null, fetcher)
     return { zakhialgiinGaralt: data, zakhialgaMutate: mutate }
 }
 
