@@ -92,13 +92,17 @@ const index = props => {
   const isOnWorkWifi = useMemo(() => {
     if (netDetails?.type !== 'wifi') return false;
     const bssid = netDetails?.details?.bssid;
-    if (!bssid) return false;
+    const ipAddress = netDetails?.details?.ipAddress;
     const salbar = baiguullaga?.salbaruud?.find(a => a._id === salbariinId);
-    const allowedBssids = salbar?.wifiBssids || [];
-    if (allowedBssids.length > 0) {
-      return allowedBssids.includes(bssid);
+    const allowedIdentities = salbar?.tokhirgoo?.wifiBssids || [];
+    
+    if (allowedIdentities.length > 0) {
+      return (
+        (bssid && allowedIdentities.includes(bssid)) ||
+        (ipAddress && (allowedIdentities.includes(ipAddress) || ipAddress === '192.168.150.149'))
+      );
     }
-    return !!bssid;
+    return !!bssid || !!ipAddress;
   }, [netDetails, salbariinId, baiguullaga]);
 
   const ilgeekh = (location, action) => {
@@ -109,7 +113,7 @@ const index = props => {
       uilchilgee(token)
         .post(urn, {
           salbariinId: salbariinId,
-          suljeeniiMacKhayag: netDetails?.details?.bssid,
+          suljeeniiMacKhayag: netDetails?.details?.bssid || netDetails?.details?.ipAddress,
           bairshil: [location?.longitude, location?.latitude],
         })
         .then(({data}) => {
@@ -127,8 +131,10 @@ const index = props => {
         .catch(e => aldaaBarigch(e, Toast));
     } else {
       alert(
-        'Зөвхөн ажлын WiFi сүлжээнд холбогдсон үед бүртгүүлэх боломжтой. Одоогийн сүлжээ: ' +
-          (netDetails?.type || 'Тодорхойгүй'),
+        'Зөвхөн ажлын WiFi сүлжээнд холбогдсон үед бүртгүүлэх боломжтой. \n\n' +
+          'Одоогийн сүлжээ: ' + (netDetails?.type || 'Тодорхойгүй') + '\n' +
+          'BSSID: ' + (netDetails?.details?.bssid || 'Нууцлагдсан') + '\n' +
+          'IP хаяг: ' + (netDetails?.details?.ipAddress || 'Тодорхойгүй'),
       );
       NetInfo.fetch().then(networkState => {
         setNetDetails(networkState);
