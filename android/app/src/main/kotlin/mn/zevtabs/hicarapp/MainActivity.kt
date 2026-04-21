@@ -1,5 +1,7 @@
 package mn.zevtabs.hicarapp
 
-import io.flutter.embedding.android.FlutterActivity
+import com.facebook.react.ReactActivity
 
-class MainActivity : FlutterActivity()
+class MainActivity : ReactActivity() {
+    override fun getMainComponentName(): String = "hicarwork"
+}
