@@ -224,15 +224,12 @@ const index = props => {
   }, [baiguullaga]);
 
   // 5. User can change image by clicking image
-  const onImagePicked = useCallback(
-    response => {
-      if (response?.assets?.[0]?.uri) {
-        setAvatarUri(response.assets[0].uri);
-      }
-      setShowImageSheet(false);
-    },
-    [],
-  );
+  const onImagePicked = useCallback(response => {
+    if (response?.assets?.[0]?.uri) {
+      setAvatarUri(response.assets[0].uri);
+    }
+    setShowImageSheet(false);
+  }, []);
 
   const onImageLibraryPress = useCallback(() => {
     ImagePicker.launchImageLibrary(
@@ -264,10 +261,10 @@ const index = props => {
   const avatarSource = avatarUri
     ? {uri: avatarUri}
     : ajiltan?.zurgiinNer
-    ? {
-        uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
-      }
-    : require('../../assets/images/oyuk.jpg');
+      ? {
+          uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
+        }
+      : null;
 
   return (
     <Box flex={1} style={{backgroundColor: '#f5f5fb'}}>
@@ -364,7 +361,16 @@ const index = props => {
                   size={'2xl'}
                   source={avatarSource}
                   alt={ajiltan?.zurgiinNer}
-                />
+                  bg="blue.400">
+                  {!avatarSource && (
+                    <Icon
+                      as={MaterialIcons}
+                      name="person"
+                      size="2xl"
+                      color="white"
+                    />
+                  )}
+                </Avatar>
               </Pressable>
               <Box flexDir={'row'} alignItems="center">
                 <Heading>{ajiltan.ner}</Heading>
@@ -518,15 +524,13 @@ const index = props => {
                 buttonState === 'garakh'
                   ? 'orange.100'
                   : buttonState === 'dahinBurtguulye'
-                  ? 'blue.100'
-                  : 'blue.100'
+                    ? 'blue.100'
+                    : 'blue.100'
               }
               rounded={'md'}
               py={4}
               disabled={isButtonDisabled || buttonState === 'waiting'}
-              opacity={
-                isButtonDisabled || buttonState === 'waiting' ? 0.5 : 1
-              }
+              opacity={isButtonDisabled || buttonState === 'waiting' ? 0.5 : 1}
               onPress={() => {
                 if (!isButtonDisabled && buttonState !== 'waiting') {
                   tsagBurtgel();
@@ -534,18 +538,16 @@ const index = props => {
               }}>
               <Center>
                 <Heading
-                  color={
-                    buttonState === 'garakh' ? 'orange.500' : 'blue.500'
-                  }>
+                  color={buttonState === 'garakh' ? 'orange.500' : 'blue.500'}>
                   {isButtonDisabled && buttonState === 'garakh'
                     ? `${countdown} секунд`
                     : buttonState === 'garakh'
-                    ? 'Гарах'
-                    : buttonState === 'dahinBurtguulye'
-                    ? 'Дахин бүртгүүлэх'
-                    : buttonState === 'waiting'
-                    ? '12:00 цагт боломжтой'
-                    : 'Орох'}
+                      ? 'Гарах'
+                      : buttonState === 'dahinBurtguulye'
+                        ? 'Дахин бүртгүүлэх'
+                        : buttonState === 'waiting'
+                          ? '12:00 цагт боломжтой'
+                          : 'Орох'}
                 </Heading>
               </Center>
             </Pressable>
