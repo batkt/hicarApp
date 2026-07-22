@@ -600,6 +600,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 21;
+				"CURRENT_PROJECT_VERSION[sdk=*]" = 21;
 				DEVELOPMENT_TEAM = UAU5V428C5;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = hicarwork/Info.plist;
@@ -635,6 +636,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 21;
+				"CURRENT_PROJECT_VERSION[sdk=*]" = 21;
 				DEVELOPMENT_TEAM = UAU5V428C5;
 				INFOPLIST_FILE = hicarwork/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
