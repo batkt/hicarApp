@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useCallback} from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Box,
   HStack,
@@ -19,27 +19,27 @@ import {
   useToast,
 } from 'native-base';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useAuth} from 'components/context/Auth';
-import {rightNavigation} from 'components/layout/LeftDrawer';
-import uilchilgee, {aldaaBarigch, url} from 'lib/uilchilgee';
-import {useNavigation} from '@react-navigation/native';
+import { useAuth } from 'components/context/Auth';
+import { rightNavigation } from 'components/layout/LeftDrawer';
+import uilchilgee, { aldaaBarigch, url } from 'lib/uilchilgee';
+import { useNavigation } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
 import NetInfo from '@react-native-community/netinfo';
-import {PermissionsAndroid, Platform} from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 import moment from 'moment';
 import useData from 'hooks/useData';
-import {RefreshControl} from 'react-native';
+import { RefreshControl } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 
 const infoMethod = 'post';
 const infoService = '/irtsiinMedeeAvya';
 
 const index = props => {
-  const {token, sonorduulga, ajiltan, baiguullaga, unuudriinIrts, salbariinId} =
+  const { token, sonorduulga, ajiltan, baiguullaga, unuudriinIrts, salbariinId } =
     useAuth();
   const navigation = useNavigation();
   const Toast = useToast();
-  const {isOpen, onOpen, onClose} = useDisclose();
+  const { isOpen, onOpen, onClose } = useDisclose();
   const [netDetails, setNetDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
@@ -95,11 +95,11 @@ const index = props => {
     const ipAddress = netDetails?.details?.ipAddress;
     const salbar = baiguullaga?.salbaruud?.find(a => a._id === salbariinId);
     const allowedIdentities = salbar?.tokhirgoo?.wifiBssids || [];
-    
+
     if (allowedIdentities.length > 0) {
       return (
         (bssid && allowedIdentities.includes(bssid)) ||
-        (ipAddress && (allowedIdentities.includes(ipAddress) || ipAddress === '192.168.150.149'))
+        (ipAddress && (allowedIdentities.includes(ipAddress) || ipAddress === '66.181.182.21'))
       );
     }
     return !!bssid || !!ipAddress;
@@ -116,7 +116,7 @@ const index = props => {
           suljeeniiMacKhayag: netDetails?.details?.bssid || netDetails?.details?.ipAddress,
           bairshil: [location?.longitude, location?.latitude],
         })
-        .then(({data}) => {
+        .then(({ data }) => {
           if (data === 'Amjilttai') {
             onClose();
             unuudriinIrts.mutate();
@@ -132,9 +132,9 @@ const index = props => {
     } else {
       alert(
         'Зөвхөн ажлын WiFi сүлжээнд холбогдсон үед бүртгүүлэх боломжтой. \n\n' +
-          'Одоогийн сүлжээ: ' + (netDetails?.type || 'Тодорхойгүй') + '\n' +
-          'BSSID: ' + (netDetails?.details?.bssid || 'Нууцлагдсан') + '\n' +
-          'IP хаяг: ' + (netDetails?.details?.ipAddress || 'Тодорхойгүй'),
+        'Одоогийн сүлжээ: ' + (netDetails?.type || 'Тодорхойгүй') + '\n' +
+        'BSSID: ' + (netDetails?.details?.bssid || 'Нууцлагдсан') + '\n' +
+        'IP хаяг: ' + (netDetails?.details?.ipAddress || 'Тодорхойгүй'),
       );
       NetInfo.fetch().then(networkState => {
         setNetDetails(networkState);
@@ -207,7 +207,7 @@ const index = props => {
               'Амжилтгүй боллоо. Та байршил тогтоогчийг асаасан эсэхээ шалгана уу.',
             );
           },
-          {enableHighAccuracy: false, timeout: 8000, maximumAge: 0},
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 },
         );
       } else alert('Байршлын мэдээлэлд хандах эрхийг зөвшөөрнө үү.');
     } catch (err) {
@@ -233,7 +233,7 @@ const index = props => {
 
   const onImageLibraryPress = useCallback(() => {
     ImagePicker.launchImageLibrary(
-      {mediaType: 'photo', selectionLimit: 1, includeBase64: false},
+      { mediaType: 'photo', selectionLimit: 1, includeBase64: false },
       onImagePicked,
     );
     setShowImageSheet(false);
@@ -252,22 +252,22 @@ const index = props => {
       }
     }
     ImagePicker.launchCamera(
-      {mediaType: 'photo', saveToPhotos: true, includeBase64: false},
+      { mediaType: 'photo', saveToPhotos: true, includeBase64: false },
       onImagePicked,
     );
     setShowImageSheet(false);
   }, [onImagePicked]);
 
   const avatarSource = avatarUri
-    ? {uri: avatarUri}
+    ? { uri: avatarUri }
     : ajiltan?.zurgiinNer
       ? {
-          uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
-        }
+        uri: `${url}/ajiltniiZuragAvya/${ajiltan?.baiguullagiinId}/${ajiltan?.zurgiinNer}`,
+      }
       : null;
 
   return (
-    <Box flex={1} style={{backgroundColor: '#f5f5fb'}}>
+    <Box flex={1} style={{ backgroundColor: '#f5f5fb' }}>
       <HStack
         bg="#1877f2"
         px={1}
@@ -311,7 +311,7 @@ const index = props => {
                     variant={'solid'}
                     alignSelf="flex-end"
                     padding={1}
-                    _text={{fontSize: 8}}></Badge>
+                    _text={{ fontSize: 8 }}></Badge>
                 )}
               </React.Fragment>
             }
@@ -441,9 +441,8 @@ const index = props => {
             </Pressable>
 
             <Box py={2} px={4} bg="white" rounded={'md'} w="full" mt={5}>
-              <Heading size={'md'} fontWeight={400}>{`${
-                new Date().getMonth() + 1
-              }-р сар хураангуй`}</Heading>
+              <Heading size={'md'} fontWeight={400}>{`${new Date().getMonth() + 1
+                }-р сар хураангуй`}</Heading>
             </Box>
             <HStack mt={5} space={4} justifyContent="center">
               <Pressable
