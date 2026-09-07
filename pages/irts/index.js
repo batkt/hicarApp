@@ -52,22 +52,32 @@ const index = props => {
       ekhlekhOgnoo: moment().startOf('month').format('YYYY-MM-DD 00:00:00'),
       duusakhOgnoo: moment().endOf('month').format('YYYY-MM-DD 23:59:59'),
       ajiltniiId: ajiltan?._id,
+      salbariinId: salbariinId,
     };
-  }, [ajiltan]);
+  }, [ajiltan, salbariinId]);
 
   const info = useData(token, infoService, queryData, infoMethod);
 
   const dashboard = useMemo(() => {
+    const findToo = id => info?.data?.find?.(a => a._id === id)?.too;
+    const firstItem = Array.isArray(info?.data) ? info?.data?.[0] : info?.data;
+
+    const infoKheviin = findToo('kheviin') !== undefined 
+      ? Number(findToo('kheviin') || 0) 
+      : Number(firstItem?.kheviin || 0);
+
+    const infoKhotsrolt = info?.data?.some?.(a => a._id)
+      ? (info?.data?.filter?.(a => a._id === 'hagas' || a._id === 'khotsorson')?.reduce((a, b) => a + Number(b.too), 0) || 0)
+      : (Number(firstItem?.khotsorson || 0) + Number(firstItem?.hagas || 0));
+
+    const infoBurtgeegui = info?.data?.some?.(a => a._id)
+      ? (info?.data?.filter?.(a => a._id === 'chuluu' || a._id === 'tasalsan')?.reduce((a, b) => a + Number(b.too), 0) || 0)
+      : (Number(firstItem?.chuluu || 0) + Number(firstItem?.tasalsan || 0));
+
     return {
-      kheviin: info?.data?.find(a => a._id === 'kheviin')?.too || 0,
-      kheviinbus:
-        info?.data
-          ?.filter(a => a._id === 'hagas' || a._id === 'khotsorson')
-          ?.reduce((a, b) => a + Number(b.too), 0) || 0,
-      burtgeegui:
-        info?.data
-          ?.filter(a => a._id === 'chuluu' || a._id === 'tasalsan')
-          ?.reduce((a, b) => a + Number(b.too), 0) || 0,
+      kheviin: infoKheviin,
+      kheviinbus: infoKhotsrolt,
+      burtgeegui: infoBurtgeegui,
     };
   }, [info]);
 
@@ -126,9 +136,13 @@ const index = props => {
               count: 2,
             });
           }
-          setIsLoading(false);
         })
-        .catch(e => aldaaBarigch(e, Toast));
+        .catch(e => {
+          aldaaBarigch(e, Toast);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     } else {
       alert(
         'Зөвхөн ажлын WiFi сүлжээнд холбогдсон үед бүртгүүлэх боломжтой. \n\n' +
@@ -209,8 +223,12 @@ const index = props => {
           },
           { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 },
         );
-      } else alert('Байршлын мэдээлэлд хандах эрхийг зөвшөөрнө үү.');
+      } else {
+        setIsLoading(false);
+        alert('Байршлын мэдээлэлд хандах эрхийг зөвшөөрнө үү.');
+      }
     } catch (err) {
+      setIsLoading(false);
       console.warn(err);
     }
   };
@@ -423,7 +441,7 @@ const index = props => {
               mt={5}
               onPress={() =>
                 navigation.navigate('IrtsDelgerengui', {
-                  defaultTuluv: 'kheviin',
+                  defaultTuluv: 'all',
                 })
               }>
               <Box ml="auto" flexDir={'row'} alignItems="center">

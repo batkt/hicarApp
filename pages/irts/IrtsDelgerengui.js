@@ -2,16 +2,17 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {
   Box,
   HStack,
+  VStack,
   Icon,
   Text,
   IconButton,
   Badge,
-  ScrollView,
   Center,
   Avatar,
   Heading,
   Pressable,
   FlatList,
+  Divider,
 } from 'native-base';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useAuth} from 'components/context/Auth';
@@ -28,10 +29,85 @@ const infoMethod = 'post';
 const infoService = '/irtsiinMedeeAvya';
 const irtsService = '/irts';
 
+const formatMinutes = min => {
+  if (!min || isNaN(min) || min <= 0) return '0 мин';
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  if (h > 0 && m > 0) return `${h}ц ${m}м`;
+  if (h > 0) return `${h}ц`;
+  return `${m} мин`;
+};
+
+const getTuluvBadge = item => {
+  const tuluv = item?.tuluv;
+  const khotsorson = Number(item?.khotsorsonMinut || 0);
+
+  if (tuluv === 'kheviin' || (tuluv !== 'chuluu' && tuluv !== 'tasalsan' && khotsorson === 0)) {
+    return (
+      <Badge colorScheme="success" rounded="md" variant="subtle" _text={{fontSize: 11, fontWeight: 'bold'}}>
+        Хэвийн
+      </Badge>
+    );
+  }
+  if (tuluv === 'khotsorson' || khotsorson > 0) {
+    return (
+      <Badge colorScheme="warning" rounded="md" variant="subtle" _text={{fontSize: 11, fontWeight: 'bold'}}>
+        {khotsorson > 0 ? `${formatMinutes(khotsorson)} хоцорсон` : 'Хоцорсон'}
+      </Badge>
+    );
+  }
+  if (tuluv === 'hagas') {
+    return (
+      <Badge colorScheme="orange" rounded="md" variant="subtle" _text={{fontSize: 11, fontWeight: 'bold'}}>
+        Хагас өдөр
+      </Badge>
+    );
+  }
+  if (tuluv === 'chuluu') {
+    return (
+      <Badge colorScheme="info" rounded="md" variant="subtle" _text={{fontSize: 11, fontWeight: 'bold'}}>
+        Чөлөөтэй
+      </Badge>
+    );
+  }
+  if (tuluv === 'tasalsan') {
+    return (
+      <Badge colorScheme="danger" rounded="md" variant="subtle" _text={{fontSize: 11, fontWeight: 'bold'}}>
+        Тасалсан
+      </Badge>
+    );
+  }
+  return (
+    <Badge colorScheme="coolGray" rounded="md" variant="subtle" _text={{fontSize: 11}}>
+      {tuluv || 'Тодорхойгүй'}
+    </Badge>
+  );
+};
+
+const isKheviin = item => {
+  const tuluv = item?.tuluv;
+  const khotsorson = Number(item?.khotsorsonMinut || 0);
+  return (
+    tuluv === 'kheviin' ||
+    (!['khotsorson', 'hagas', 'chuluu', 'tasalsan'].includes(tuluv) && khotsorson === 0)
+  );
+};
+
+const isKhotsrolt = item => {
+  const tuluv = item?.tuluv;
+  const khotsorson = Number(item?.khotsorsonMinut || 0);
+  return tuluv === 'khotsorson' || tuluv === 'hagas' || khotsorson > 0;
+};
+
+const isBurtgeegui = item => {
+  const tuluv = item?.tuluv;
+  return tuluv === 'chuluu' || tuluv === 'tasalsan';
+};
+
 const IrtsDelgerengui = props => {
   const {defaultTuluv} = props?.route?.params || {};
-  const {sonorduulga, ajiltan, token} = useAuth();
-  const [turul, setTurul] = useState('kheviin');
+  const {sonorduulga, ajiltan, token, salbariinId} = useAuth();
+  const [turul, setTurul] = useState(defaultTuluv || 'all');
   const [ognoo, setOgnoo] = useState([
     moment().startOf('month').toDate(),
     moment().endOf('month').toDate(),
@@ -42,45 +118,73 @@ const IrtsDelgerengui = props => {
       ekhlekhOgnoo: moment(ognoo[0]).format('YYYY-MM-DD 00:00:00'),
       duusakhOgnoo: moment(ognoo[1]).format('YYYY-MM-DD 23:59:59'),
       ajiltniiId: ajiltan?._id,
+      salbariinId: salbariinId,
     };
-  }, [ajiltan, ognoo]);
+  }, [ajiltan, ognoo, salbariinId]);
 
   const info = useData(token, infoService, queryData, infoMethod);
 
-  const dashboard = useMemo(() => {
-    return {
-      kheviin: info?.data?.find(a => a._id === 'kheviin')?.too || 0,
-      kheviinbus:
-        info?.data
-          ?.filter(a => a._id === 'hagas' || a._id === 'khotsorson')
-          ?.reduce((a, b) => a + Number(b.too), 0) || 0,
-      burtgeegui:
-        info?.data
-          ?.filter(a => a._id === 'chuluu' || a._id === 'tasalsan')
-          ?.reduce((a, b) => a + Number(b.too), 0) || 0,
-    };
-  }, [info]);
-
   useEffect(() => {
-    defaultTuluv && setTurul(defaultTuluv);
+    if (defaultTuluv) setTurul(defaultTuluv);
   }, [defaultTuluv]);
 
   const query = useMemo(() => {
-    var value = {
+    return {
       ajiltniiId: ajiltan?._id,
       ognoo: {
         $gte: moment(ognoo[0]).format('YYYY-MM-DD 00:00:00'),
         $lte: moment(ognoo[1]).format('YYYY-MM-DD 23:59:59'),
       },
     };
-    if (turul === 'khotsrolt') value.tuluv = ['hagas', 'khotsorson'];
-    else if (turul === 'burtguuleegui') value.tuluv = ['chuluu', 'tasalsan'];
-    else value.tuluv = 'kheviin';
-
-    return value;
-  }, [turul, ognoo, ajiltan]);
+  }, [ognoo, ajiltan]);
 
   const irts = useJagsaalt(token, irtsService, query, order);
+
+  const filteredJagsaalt = useMemo(() => {
+    const list = irts?.jagsaalt || [];
+    if (turul === 'kheviin') return list.filter(isKheviin);
+    if (turul === 'khotsrolt') return list.filter(isKhotsrolt);
+    if (turul === 'burtguuleegui') return list.filter(isBurtgeegui);
+    return list;
+  }, [irts?.jagsaalt, turul]);
+
+  const dashboard = useMemo(() => {
+    const list = irts?.jagsaalt || [];
+    const kheviinCount = list.filter(isKheviin).length;
+    const khotsroltCount = list.filter(isKhotsrolt).length;
+    const burtgeeguiCount = list.filter(isBurtgeegui).length;
+
+    const findToo = id => info?.data?.find?.(a => a._id === id)?.too;
+    const firstItem = Array.isArray(info?.data) ? info?.data?.[0] : info?.data;
+
+    const infoKheviin = findToo('kheviin') !== undefined 
+      ? Number(findToo('kheviin') || 0) 
+      : Number(firstItem?.kheviin || 0);
+
+    const infoKhotsrolt = info?.data?.some?.(a => a._id)
+      ? (info?.data?.filter?.(a => a._id === 'hagas' || a._id === 'khotsorson')?.reduce((a, b) => a + Number(b.too), 0) || 0)
+      : (Number(firstItem?.khotsorson || 0) + Number(firstItem?.hagas || 0));
+
+    const infoBurtgeegui = info?.data?.some?.(a => a._id)
+      ? (info?.data?.filter?.(a => a._id === 'chuluu' || a._id === 'tasalsan')?.reduce((a, b) => a + Number(b.too), 0) || 0)
+      : (Number(firstItem?.chuluu || 0) + Number(firstItem?.tasalsan || 0));
+
+    if (list.length > 0) {
+      return {
+        kheviin: kheviinCount,
+        kheviinbus: khotsroltCount,
+        burtgeegui: burtgeeguiCount,
+        niit: list.length,
+      };
+    }
+
+    return {
+      kheviin: infoKheviin,
+      kheviinbus: infoKhotsrolt,
+      burtgeegui: infoBurtgeegui,
+      niit: infoKheviin + infoKhotsrolt + infoBurtgeegui,
+    };
+  }, [irts?.jagsaalt, info]);
 
   return (
     <Box flex={1} style={{backgroundColor: '#f5f5fb'}}>
@@ -104,7 +208,7 @@ const IrtsDelgerengui = props => {
             onPress={() => props.navigation.goBack()}
           />
           <Text color="white" fontSize={16} fontWeight="bold">
-            Ирцийн тайлан
+            Ирцийн дэлгэрэнгүй тайлан
           </Text>
         </HStack>
         <HStack space={2}>
@@ -162,145 +266,198 @@ const IrtsDelgerengui = props => {
             {moment(ognoo[1]).format('YYYY-MM-DD')}
           </DatePicker>
         </HStack>
-        <HStack mt={5} space={4} justifyContent="center">
-          <Pressable w="30%" onPress={() => setTurul('kheviin')}>
+
+        {/* Filter Toggle Buttons */}
+        <HStack mt={3} space={2} justifyContent="center">
+          <Pressable
+            flex={1}
+            onPress={() => setTurul(turul === 'kheviin' ? 'all' : 'kheviin')}>
             <Center
               bg={turul === 'kheviin' ? 'blue.600' : 'white'}
-              rounded={'md'}
-              py={3}>
+              rounded={'lg'}
+              py={2.5}
+              shadow={turul === 'kheviin' ? 3 : 1}>
               <Avatar
                 bg={turul === 'kheviin' ? 'blue.500' : 'blue.100'}
-                size={'lg'}>
-                <Center>
-                  <Heading color={turul === 'kheviin' ? 'white' : 'blue.500'}>
-                    {dashboard.kheviin}
-                  </Heading>
-                  <Heading
-                    size={'xs'}
-                    color={turul === 'kheviin' ? 'white' : 'blue.500'}>
-                    Өдөр
-                  </Heading>
-                </Center>
+                size={'sm'}>
+                <Heading size="xs" color={turul === 'kheviin' ? 'white' : 'blue.500'}>
+                  {dashboard.kheviin}
+                </Heading>
               </Avatar>
-              <Box
-                mt={3}
-                _text={{color: turul === 'kheviin' ? 'white' : 'black'}}>
+              <Text
+                mt={1}
+                fontSize="2xs"
+                fontWeight="bold"
+                color={turul === 'kheviin' ? 'white' : 'gray.700'}>
                 Хэвийн
-              </Box>
+              </Text>
             </Center>
           </Pressable>
-          <Pressable w="30%" onPress={() => setTurul('khotsrolt')}>
+          <Pressable
+            flex={1}
+            onPress={() => setTurul(turul === 'khotsrolt' ? 'all' : 'khotsrolt')}>
             <Center
-              bg={turul === 'khotsrolt' ? 'orange.600' : 'white'}
-              rounded={'md'}
-              py={3}>
+              bg={turul === 'khotsrolt' ? 'orange.500' : 'white'}
+              rounded={'lg'}
+              py={2.5}
+              shadow={turul === 'khotsrolt' ? 3 : 1}>
               <Avatar
-                bg={turul === 'khotsrolt' ? 'orange.500' : 'orange.100'}
-                size={'lg'}>
-                <Center>
-                  <Heading
-                    color={turul === 'khotsrolt' ? 'white' : 'orange.500'}>
-                    {dashboard.kheviinbus}
-                  </Heading>
-                  <Heading
-                    size={'xs'}
-                    color={turul === 'khotsrolt' ? 'white' : 'orange.500'}>
-                    Өдөр
-                  </Heading>
-                </Center>
+                bg={turul === 'khotsrolt' ? 'orange.400' : 'orange.100'}
+                size={'sm'}>
+                <Heading
+                  size="xs"
+                  color={turul === 'khotsrolt' ? 'white' : 'orange.500'}>
+                  {dashboard.kheviinbus}
+                </Heading>
               </Avatar>
-              <Box
-                mt={3}
-                _text={{color: turul === 'khotsrolt' ? 'white' : 'black'}}>
+              <Text
+                mt={1}
+                fontSize="2xs"
+                fontWeight="bold"
+                color={turul === 'khotsrolt' ? 'white' : 'gray.700'}>
                 Хоцролт
-              </Box>
+              </Text>
             </Center>
           </Pressable>
-          <Pressable w="30%" onPress={() => setTurul('burtguuleegui')}>
+          <Pressable
+            flex={1}
+            onPress={() => setTurul(turul === 'burtguuleegui' ? 'all' : 'burtguuleegui')}>
             <Center
               bg={turul === 'burtguuleegui' ? 'red.600' : 'white'}
-              rounded={'md'}
-              py={3}>
+              rounded={'lg'}
+              py={2.5}
+              shadow={turul === 'burtguuleegui' ? 3 : 1}>
               <Avatar
                 bg={turul === 'burtguuleegui' ? 'red.500' : 'red.100'}
-                size={'lg'}>
-                <Center>
-                  <Heading
-                    color={turul === 'burtguuleegui' ? 'white' : 'red.500'}>
-                    {dashboard.burtgeegui}
-                  </Heading>
-                  <Heading
-                    size={'xs'}
-                    color={turul === 'burtguuleegui' ? 'white' : 'red.500'}>
-                    Өдөр
-                  </Heading>
-                </Center>
+                size={'sm'}>
+                <Heading
+                  size="xs"
+                  color={turul === 'burtguuleegui' ? 'white' : 'red.500'}>
+                  {dashboard.burtgeegui}
+                </Heading>
               </Avatar>
-              <Box
-                mt={3}
-                _text={{color: turul === 'burtguuleegui' ? 'white' : 'black'}}>
+              <Text
+                mt={1}
+                fontSize="2xs"
+                fontWeight="bold"
+                color={turul === 'burtguuleegui' ? 'white' : 'gray.700'}>
                 Бүртгээгүй
-              </Box>
+              </Text>
             </Center>
           </Pressable>
         </HStack>
+
+        {turul !== 'all' && (
+          <HStack justifyContent="flex-end" mt={2}>
+            <Pressable onPress={() => setTurul('all')}>
+              <Text fontSize="2xs" color="blue.600" fontWeight="bold">
+                ✕ Бүх ирцийг харах
+              </Text>
+            </Pressable>
+          </HStack>
+        )}
       </Box>
       <FlatList
         px={4}
         my={4}
-        data={irts.jagsaalt || []}
+        data={filteredJagsaalt || []}
         onEndReached={irts.next}
-        keyExtractor={m => m._id || m.ognoo + m.irsenTsag}
+        keyExtractor={m => m._id || m.ognoo + (m.irsenTsag || '')}
         ListEmptyComponent={
-          !irts.isValidating && (!irts.jagsaalt || irts.jagsaalt.length === 0) ? (
+          !irts.isValidating && (!filteredJagsaalt || filteredJagsaalt.length === 0) ? (
             <Center py={10}>
-              <Text color="gray.500">Ирцийн мэдээлэл олдсонгүй</Text>
+              <Text color="gray.500">
+                {turul !== 'all'
+                  ? 'Энэ ангилалд ирцийн мэдээлэл олдсонгүй'
+                  : 'Ирцийн мэдээлэл олдсонгүй'}
+              </Text>
+              {turul !== 'all' && (
+                <Pressable mt={3} onPress={() => setTurul('all')}>
+                  <Badge colorScheme="info" rounded="md" variant="subtle" py={1.5} px={3}>
+                    Бүх ирцийг харах
+                  </Badge>
+                </Pressable>
+              )}
             </Center>
           ) : null
         }
         renderItem={({item}) => {
           const zuragNer = item?.ajiltan?.zurgiinNer || ajiltan?.zurgiinNer;
+          const khotsorson = Number(item?.khotsorsonMinut || 0);
+          const ajillasan = Number(item?.ajillasanMinut || 0);
+
           return (
-            <Pressable flexDir={'row'} p={4} bg="white" rounded={'md'} mb={5}>
-              <Avatar
-                size={'lg'}
-                source={
-                  zuragNer && ajiltan?.baiguullagiinId
-                    ? {
-                        uri: `${url}/ajiltniiZuragAvya/${ajiltan.baiguullagiinId}/${zuragNer}`,
-                      }
-                    : undefined
-                }
-              />
-              <Box flex={1} ml="5">
-                <HStack space={4}>
-                  <Center>
-                    <Heading size={'sm'}>Ирсэн</Heading>
-                    <Heading size={'sm'} color="blue.500">
-                      {moment(item.irsenTsag).format('HH:mm')}
-                    </Heading>
-                  </Center>
-                  <Center>
-                    <Heading size={'sm'}>Гарсан</Heading>
-                    <Heading size={'sm'} color="orange.500">
-                      {item.yawsanTsag
-                        ? moment(item.yawsanTsag).format('HH:mm')
-                        : '*'}
-                    </Heading>
-                  </Center>
-                </HStack>
-                <Box flexDir={'row'} alignItems="center" mt="1">
+            <Box p={4} bg="white" rounded={'lg'} mb={3} shadow={1}>
+              {/* Top Row: Date & Status Badge */}
+              <HStack justifyContent="space-between" alignItems="center" mb={3}>
+                <HStack space={2} alignItems="center">
                   <Icon
                     size="sm"
-                    as={<MaterialIcons name="calendar-today" />}
-                    color="gray.400"
+                    as={<MaterialIcons name="event" />}
+                    color="blue.500"
                   />
-                  <Heading size={'xs'} ml="3">
-                    {moment(item.ognoo).format('YYYY/MM/DD')}
+                  <Heading size={'xs'} color="gray.800">
+                    {moment(item.ognoo).format('YYYY-MM-DD')}
                   </Heading>
-                </Box>
-              </Box>
-            </Pressable>
+                  <Text fontSize="2xs" color="gray.400">
+                    ({moment(item.ognoo).format('dddd')})
+                  </Text>
+                </HStack>
+                {getTuluvBadge(item)}
+              </HStack>
+
+              <Divider mb={3} />
+
+              {/* Main Info Columns */}
+              <HStack justifyContent="space-between" alignItems="center">
+                <HStack space={3} alignItems="center">
+                  <Avatar
+                    size={'md'}
+                    source={
+                      zuragNer && ajiltan?.baiguullagiinId
+                        ? {
+                            uri: `${url}/ajiltniiZuragAvya/${ajiltan.baiguullagiinId}/${zuragNer}`,
+                          }
+                        : undefined
+                    }
+                  />
+                  <VStack>
+                    <HStack space={1} alignItems="center">
+                      <Text fontSize="2xs" color="gray.400" w="36px">Ирсэн:</Text>
+                      <Heading size={'xs'} color="blue.600">
+                        {item.irsenTsag ? moment(item.irsenTsag).format('HH:mm') : '-'}
+                      </Heading>
+                    </HStack>
+                    <HStack space={1} alignItems="center" mt={1}>
+                      <Text fontSize="2xs" color="gray.400" w="36px">Гарсан:</Text>
+                      <Heading size={'xs'} color={item.yawsanTsag ? 'orange.500' : 'gray.400'}>
+                        {item.yawsanTsag ? moment(item.yawsanTsag).format('HH:mm') : '*'}
+                      </Heading>
+                    </HStack>
+                  </VStack>
+                </HStack>
+
+                {/* Metrics: Late & Worked Hours */}
+                <HStack space={4} alignItems="center">
+                  <VStack alignItems="center">
+                    <Text fontSize="2xs" color="gray.400">Хоцролт</Text>
+                    <Heading
+                      size={'xs'}
+                      color={khotsorson > 0 ? 'orange.500' : 'gray.400'}>
+                      {formatMinutes(khotsorson)}
+                    </Heading>
+                  </VStack>
+                  <VStack alignItems="center">
+                    <Text fontSize="2xs" color="gray.400">Ажилласан</Text>
+                    <Heading
+                      size={'xs'}
+                      color={ajillasan > 0 ? 'blue.600' : 'gray.400'}>
+                      {formatMinutes(ajillasan)}
+                    </Heading>
+                  </VStack>
+                </HStack>
+              </HStack>
+            </Box>
           );
         }}
         refreshControl={
