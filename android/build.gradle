@@ -5,7 +5,7 @@ buildscript {
         buildToolsVersion = "31.0.0"
         minSdkVersion = 24
         compileSdkVersion = 34
-        targetSdkVersion = 35
+        targetSdkVersion = 33
         kotlinVersion = '1.8.22' // stable for RN 0.70
 
         if (System.properties['os.arch'] == "aarch64") {
